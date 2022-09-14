@@ -45,8 +45,7 @@ function FormField({
           min="0"
           onChange={onchange}
           name={elementname}
-          value = {value}
-          step="0.01"
+          step="0.1"
         />
       </div>
     </div>

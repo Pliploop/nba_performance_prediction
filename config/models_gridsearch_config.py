@@ -26,12 +26,12 @@ gridsearches = {
     {'C': [0.1, 1, 10], 'kernel': ['linear']},
     "SVCGamma": {'C': [0.1, 1, 10], 'gamma': [
         1, 0.1, 0.01], 'kernel': ['rbf']},
-    "KNNC": {"n_neighbors": [2, 3, 5, 10, 20]},
+    "KNNC": {"n_neighbors": [2, 5, 10, 20]},
     "MLPC": {"hidden_layer_sizes": [(100,), (50, 50), (100, 50)], "max_iter": [1000]},
     "RFC": {
-        'n_estimators': [10, 50, 100],
-        'max_features': ['sqrt', 'log2'],
-        'max_depth': [4, 6, 8, 10],
+        'n_estimators': [10, 25, 50,],
+        'max_features': ['sqrt'],
+        'max_depth': [4, 6, 8],
     },
     "XGBC": {
         "learning_rate": [0.01, 0.025, 0.075, 0.15],

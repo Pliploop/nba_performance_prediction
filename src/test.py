@@ -24,6 +24,10 @@ class NBAevaluator():
     def __init__(self) -> None:
         self.gridsearches = gridsearches
         self.classifiers = classifiers
+        self.X_train = None
+        self.X_test = None
+        self.y_train = None
+        self.y_test = None
 
     def score_classifier(self, dataset, classifier, classifier_name, labels, gridsearch=None):
         """
