@@ -46,19 +46,7 @@ df.head()
 
 
 <div>
-<style scoped>
-    .dataframe tbody tr th:only-of-type {
-        vertical-align: middle;
-    }
 
-    .dataframe tbody tr th {
-        vertical-align: top;
-    }
-
-    .dataframe thead th {
-        text-align: right;
-    }
-</style>
 <table border="1" class="dataframe">
   <thead>
     <tr style="text-align: right;">
@@ -370,7 +358,7 @@ evaluator = NBAevaluator()
 
 the first step is to load and clean the dataset (i.e replace nan values with 0). Note that scaling the whole dataset is not good practice as it causes data leakage between the train and test set, so we do that later on. The code for this is shown here:
 
-<code>
+```python
 def load_and_clean(self):
 
         # Load dataset
@@ -387,7 +375,7 @@ def load_and_clean(self):
             X[x] = 0.0
 
         return names, X, y
-</code>
+```
 
 
 ```python
@@ -396,14 +384,14 @@ names, X, y = evaluator.load_and_clean()
 
 Next, split into train-test set. based on the size of the dataset, we estimate a 90-10 split is relevant for the task at hand:
 
-<code>
+```python
 
 def split_train_test(self, X, y):
 
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.1, random_state=42)
         return X_train, X_test, y_train, y_test
-</code>
+```
 
 
 ```python
@@ -414,7 +402,7 @@ evaluator.X_train, evaluator.X_test, evaluator.y_train, evaluator.y_test = evalu
 We then scale the data in the TRAINING set ONLY and apply the scaler to the test set to obtain the scaled training and test sets without the data leakage associated with scaling them together:
 
 
-<code>
+```python
     def scale_train_test(self, X_train, X_test):
     
         MMS = MinMaxScaler()
@@ -425,7 +413,7 @@ We then scale the data in the TRAINING set ONLY and apply the scaler to the test
 
 
 
-</code>
+```
 
 
 ```python
@@ -442,7 +430,7 @@ Then, a list of classifiers is imported from config (classic binary classificati
 
 And we perform a gridsearch on these models on the training set with 10-fold cross-validation to determine the optimal model. We optimize the grid searches for accuracy - as optimizing them for recall led to overfitting-prone models always choosing to classify the player as a 1, but choose our best model based on recall. All the models are fitted for their respective gridsearch using 10-fold cross validation, and report the average performance of each model on the validation sets:
 
-<code>
+```python
 def score_classifier(self, dataset, classifier, classifier_name, labels, gridsearch=None):
 
 
@@ -493,7 +481,7 @@ def score_classifier(self, dataset, classifier, classifier_name, labels, gridsea
             'precision': precision,
             'accuracy': accuracy,
             'model': classifier}
-</code>
+```
 
 *Note that ideally, the parameters such as the number of folds would be moved to a config file to hard-code nothing into the base code*
 
@@ -513,8 +501,7 @@ evaluator.train_records = train_records
 
 We then score each classifier on our set apart test set to determine the best classifier for recall, which we will save in the back-end folder of our API for inference. This is done in the following function:
 
-<code>
-
+```python
 def score_classifier_on_test_set(self, test_set, test_labels, classifier, classifier_name):
 
         predicted_labels = classifier.predict(test_set)
@@ -531,8 +518,7 @@ def score_classifier_on_test_set(self, test_set, test_labels, classifier, classi
                 "recall": recall,
                 "accuracy": accuracy}
 
-</code>
-
+```
 
 ```python
 test_records = {}
@@ -542,24 +528,61 @@ for record in train_records.keys():
 
 ```
 
-Based on recall alone, we should be choosing XGBoost with 87.5% recall rate. However, XGBoost shows low accuracy and precision, which leads to interpretation of overfitting (always predicting 1). So, we choose the next best model which has good recall and a good precision-accuracy-recall balance : Logistic Regression. We can save it using the following function from the evaluator class:
+    KNNC:
+    confusion matrix: 
+    [[38 16]
+    [23 57]]
+    recall : 0.7125 - precision : 0.7808219178082192 - accuracy : 0.7089552238805971
 
-<code>
+    SVC:
+    confusion matrix: 
+    [[29 25]
+    [14 66]]
+    recall : 0.825 - precision : 0.7252747252747253 - accuracy : 0.7089552238805971
 
+    SVCGamma:
+    confusion matrix: 
+    [[31 23]
+    [15 65]]
+    recall : 0.8125 - precision : 0.7386363636363636 - accuracy : 0.7164179104477612
+
+    RFC:
+    confusion matrix: 
+    [[29 25]
+    [16 64]]
+    recall : 0.8 - precision : 0.7191011235955056 - accuracy : 0.6940298507462687
+
+    MLPC:
+    confusion matrix: 
+    [[36 18]
+    [17 63]]
+    recall : 0.7875 - precision : 0.7777777777777778 - accuracy : 0.7388059701492538
+
+    XGBC:
+    confusion matrix: 
+    [[31 23]
+    [16 64]]
+    recall : 0.8 - precision : 0.735632183908046 - accuracy : 0.7089552238805971
+
+    logreg:
+    confusion matrix: 
+    [[32 22]
+    [13 67]]
+    recall : 0.8375 - precision : 0.7528089887640449 - accuracy : 0.7388059701492538
+
+We chose the model which has good recall and a good precision-accuracy-recall balance : Logistic Regression. We can save it using the following function from the evaluator class:
+
+```python
     def select_save_best_model(self,model_name = "logreg"):
         print("performance of best selected model on test set: \n \n")
         self.score_classifier_on_test_set(self.X_test,self.y_test, self.train_records[model_name]['model'], model_name)
         pipeline = Pipeline([('scaler', self.scaler),('model',self.train_records[model_name]['model'])])
         joblib.dump(pipeline,f'nba_performance_prediction_back/pipelines/best_model.pkl')
-
-
-
-</code>
+```
 
 This is all condensed into the <code> fitting_pipeline</code> method of the evaluator class:
 
-<code>
-
+```python
   def fitting_pipeline(self, gs=False):
   
         print('loading and cleaning dataset')
@@ -583,14 +606,13 @@ This is all condensed into the <code> fitting_pipeline</code> method of the eval
                 self.X_test, self.y_test, train_records[record]['model'], record)
         
         return test_records
-
-</code>
+```
 
 Which can be ran from the cli using:
 
 <code> python src/main.py</code>
 
-We can also ge the parameters of each optimal model to not have to conduct the grid search every time (gs = False).
+We can also get the parameters of each optimal model to not have to conduct the grid search every time (gs = False).
 
 
 ```python
